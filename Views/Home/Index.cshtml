@@ -1,0 +1,830 @@
+@using MovieRankingSystem.Models.ViewModels
+@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Movie Ranking System | ML.NET";
+}
+
+<style>
+    :root {
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --bg-dark: #0f172a;
+        --card-bg: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --accent: #10b981;
+        --gold: #f59e0b;
+        --fire: #ef4444;
+        --listwise: #3b82f6;
+        --pointwise: #10b981;
+        --pairwise: #8b5cf6;
+    }
+
+    body {
+        background-color: var(--bg-dark);
+        color: var(--text-primary);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .glass-header {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        padding: 3rem 1rem;
+        text-align: center;
+        border-radius: 0 0 2rem 2rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        margin-bottom: 3rem;
+    }
+
+    .header-nav {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .header-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.7rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: white;
+        text-decoration: none;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .header-link.active {
+        background: rgba(15, 23, 42, 0.28);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .search-container {
+        max-width: 800px;
+        margin: -2rem auto 0;
+        padding: 0 1rem;
+        text-align: center;
+    }
+
+    .search-box {
+        background: var(--card-bg);
+        padding: 0.5rem;
+        border-radius: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 0 auto;
+    }
+
+    .search-box input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 1rem;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .search-box input:focus {
+        outline: none;
+    }
+
+    .btn-rank {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-rank:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .mode-switcher {
+        display: inline-grid;
+        grid-template-columns: repeat(3, minmax(110px, 1fr));
+        gap: 0.5rem;
+        margin-top: 1rem;
+        width: min(100%, 420px);
+    }
+
+    .mode-btn {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.75rem;
+        padding: 0.75rem 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .mode-btn[data-mode="listwise"].active {
+        background: var(--listwise);
+        border-color: var(--listwise);
+    }
+
+    .mode-btn[data-mode="pointwise"].active {
+        background: var(--pointwise);
+        border-color: var(--pointwise);
+    }
+
+    .mode-btn[data-mode="pairwise"].active {
+        background: var(--pairwise);
+        border-color: var(--pairwise);
+    }
+
+    .insight-banner {
+        margin: 2rem auto 0;
+        max-width: 1200px;
+        padding: 1rem 1.25rem;
+        border-radius: 0.9rem;
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.18), rgba(16, 185, 129, 0.14), rgba(139, 92, 246, 0.18));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: white;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .comparison-layout {
+        display: grid;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .comparison-panel {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1rem;
+        padding: 1rem;
+    }
+
+    .comparison-panel h3 {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        color: white;
+    }
+
+    .top-changes-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .top-change-item {
+        padding: 0.85rem 1rem;
+        border-radius: 0.85rem;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .top-change-item strong {
+        color: white;
+    }
+
+    .change-path {
+        margin-top: 0.35rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .mode-chip-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .mode-summary {
+        border-radius: 0.9rem;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .mode-summary[data-mode="listwise"] {
+        box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.35);
+    }
+
+    .mode-summary[data-mode="pointwise"] {
+        box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.35);
+    }
+
+    .mode-summary[data-mode="pairwise"] {
+        box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.35);
+    }
+
+    .mode-summary h4 {
+        margin: 0 0 0.75rem;
+        font-size: 0.95rem;
+        color: white;
+    }
+
+    .mode-summary ol {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--text-secondary);
+    }
+
+    .mode-summary li + li {
+        margin-top: 0.45rem;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    .movie-card {
+        background: var(--card-bg);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .movie-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--mode-color, var(--primary));
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }
+
+    .movie-card[data-mode="listwise"] {
+        --mode-color: var(--listwise);
+    }
+
+    .movie-card[data-mode="pointwise"] {
+        --mode-color: var(--pointwise);
+    }
+
+    .movie-card[data-mode="pairwise"] {
+        --mode-color: var(--pairwise);
+    }
+
+    .top-3 {
+        border: 2px solid var(--gold);
+        transform: scale(1.02);
+    }
+
+    .top-3:hover {
+        transform: scale(1.04) translateY(-5px);
+    }
+
+    .top-badge {
+        position: absolute;
+        top: 1rem;
+        right: -2rem;
+        background: var(--gold);
+        color: black;
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 0.25rem 3rem;
+        transform: rotate(45deg);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .movie-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: white;
+        padding-right: 3rem;
+    }
+
+    .summary-tag {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 0.85rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(16, 185, 129, 0.12);
+        color: #6ee7b7;
+        font-size: 0.78rem;
+        font-weight: 700;
+        width: fit-content;
+    }
+
+    .mode-tag {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 0.85rem;
+        margin-left: 0.5rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        color: white;
+        font-size: 0.78rem;
+        font-weight: 700;
+        width: fit-content;
+        background: var(--mode-color, var(--primary));
+    }
+
+    .movie-stats {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-badge {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .score-badge {
+        background: var(--mode-color, var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 700;
+        display: inline-block;
+    }
+
+    .score-meta {
+        margin-top: 0.35rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .spinner {
+        display: none;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-left-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 2rem auto;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .why-section {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: auto;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        border-left: 3px solid var(--mode-color, var(--primary));
+    }
+
+    .rank-change-card {
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 0 24px color-mix(in srgb, var(--mode-color, var(--primary)) 25%, transparent);
+    }
+
+    .rank-change-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: white;
+        background: color-mix(in srgb, var(--mode-color, var(--primary)) 75%, black);
+    }
+
+    .movement-row {
+        display: grid;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+    }
+
+    .movement-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        width: fit-content;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        color: white;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .movement-chip.up {
+        background: rgba(16, 185, 129, 0.18);
+        color: #86efac;
+    }
+
+    .movement-chip.down {
+        background: rgba(239, 68, 68, 0.18);
+        color: #fca5a5;
+    }
+
+    .movement-chip.same {
+        color: var(--text-secondary);
+    }
+
+    .train-container {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .train-meta {
+        margin-top: 0.75rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+
+
+    .btn-train {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--text-secondary);
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-train:hover {
+        background: var(--text-secondary);
+        color: var(--bg-dark);
+    }
+
+    .error-msg {
+        grid-column: 1/-1;
+        text-align: center;
+        color: var(--fire);
+        padding: 2rem;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 1rem;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    @@media (max-width: 900px) {
+        .mode-chip-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="glass-header">
+    <div class="header-nav">
+        <a class="header-link active" href="/">Ranking Modes</a>
+        <a class="header-link" href="/compare">Without vs With Ranking</a>
+    </div>
+    <h1 style="font-weight: 800; font-size: 3rem; margin-bottom: 0.5rem;">Movie Search Ranking</h1>
+    <p style="opacity: 0.8; font-size: 1.2rem;">Powered by ML.NET LightGBM (LambdaMART)</p>
+    <div id="userProfile" style="margin-top: 1rem; display: none;">
+        <span id="welcomeMsg" style="margin-right: 1rem; font-weight: 600;"></span>
+        <button id="logoutBtn" class="header-link" style="padding: 0.4rem 1rem; cursor: pointer;">Logout</button>
+    </div>
+</div>
+
+<div class="search-container">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by Query (e.g., Action, SciFi, Drama)..." value="Action">
+        <button class="btn-rank" id="searchBtn">Search & Rank</button>
+    </div>
+
+    <div class="mode-switcher" id="modeSwitcher">
+        <button class="mode-btn active" data-mode="listwise" type="button">Listwise</button>
+        <button class="mode-btn" data-mode="pointwise" type="button">Pointwise</button>
+        <button class="mode-btn" data-mode="pairwise" type="button">Pairwise</button>
+    </div>
+
+    <div class="train-container">
+        <button class="btn-train" id="trainBtn">Train ML Model</button>
+        <span id="modelStatus" style="margin-left: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+            @(Model.IsModelLoaded ? "Model Ready" : "Model Not Trained")
+        </span>
+        <div class="train-meta" id="trainMeta">Current mode: Listwise</div>
+    </div>
+
+
+</div>
+
+<div class="insight-banner">
+    Different ranking strategies produce different results.
+</div>
+
+<div id="loading" class="spinner"></div>
+
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+    <h2 id="queryHeader" style="display: none; color: white; margin-top: 2rem; text-align: center;"></h2>
+    <div class="comparison-layout" id="comparisonLayout" style="display: none;">
+        <div class="comparison-panel">
+            <h3>Top Changes</h3>
+            <div class="top-changes-list" id="topChanges"></div>
+        </div>
+        <div class="comparison-panel">
+            <h3>Top 3 Comparison</h3>
+            <div class="mode-chip-row" id="comparisonSummary"></div>
+        </div>
+    </div>
+    <div id="results" class="results-grid">
+    </div>
+</div>
+
+<script>
+    const searchBtn = document.getElementById('searchBtn');
+    const trainBtn = document.getElementById('trainBtn');
+    const searchInput = document.getElementById('searchInput');
+    const resultsContainer = document.getElementById('results');
+    const loading = document.getElementById('loading');
+    const queryHeader = document.getElementById('queryHeader');
+    const modelStatus = document.getElementById('modelStatus');
+    const trainMeta = document.getElementById('trainMeta');
+    const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
+    const comparisonLayout = document.getElementById('comparisonLayout');
+    const topChangesContainer = document.getElementById('topChanges');
+    const comparisonSummaryContainer = document.getElementById('comparisonSummary');
+    let selectedMode = '@Model.DefaultRankingType';
+    let comparisonData = {};
+    const modes = ['listwise', 'pointwise', 'pairwise'];
+    const modeColors = {
+        listwise: 'var(--listwise)',
+        pointwise: 'var(--pointwise)',
+        pairwise: 'var(--pairwise)'
+    };
+
+    function titleCase(value) {
+        return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function syncModeUi() {
+        modeButtons.forEach((button) => {
+            button.classList.toggle('active', button.dataset.mode === selectedMode);
+        });
+        trainMeta.innerText = `Current mode: ${titleCase(selectedMode)}`;
+    }
+
+    async function performSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            resultsContainer.innerHTML = '<div class="error-msg">Please enter a valid search query.</div>';
+            comparisonLayout.style.display = 'none';
+            return;
+        }
+
+        resultsContainer.innerHTML = '';
+        queryHeader.innerText = `${titleCase(selectedMode)} results loading...`;
+        queryHeader.style.display = 'block';
+        loading.style.display = 'block';
+        comparisonLayout.style.display = 'none';
+
+        try {
+            const modeResults = await Promise.all(modes.map(fetchModeResults.bind(null, query)));
+            comparisonData = Object.fromEntries(modeResults.map((item) => [item.mode, item.data]));
+            const data = comparisonData[selectedMode] || [];
+
+            if (data.length === 0) {
+                resultsContainer.innerHTML = '<div class="error-msg">No results found for this category.</div>';
+            } else {
+                queryHeader.innerText = `${titleCase(selectedMode)} results for "${query}"`;
+                queryHeader.style.display = 'block';
+                renderComparison(query);
+                renderResults(data, selectedMode);
+            }
+        } catch (error) {
+            comparisonData = {};
+            resultsContainer.innerHTML = `<div class="error-msg">
+                <h3>Error: ${error.message}</h3>
+                <p>Make sure the model is trained first.</p>
+            </div>`;
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    async function fetchModeResults(query, mode) {
+        const response = await fetch('/api/rank', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query, rankingType: mode })
+        });
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+            return { mode, data: [] };
+        }
+
+        if (!response.ok) {
+            throw new Error(`${titleCase(mode)} search failed`);
+        }
+
+        return {
+            mode,
+            data: await response.json()
+        };
+    }
+
+    function getRankMap(mode) {
+        const movies = comparisonData[mode] || [];
+        return Object.fromEntries(movies.map((movie) => [movie.movie, movie.rank]));
+    }
+
+    function describeMovement(currentRank, otherRank, mode) {
+        if (!otherRank) {
+            return { cls: 'same', text: `${titleCase(mode)} unavailable` };
+        }
+
+        if (otherRank > currentRank) {
+            return { cls: 'up', text: `↑ up vs ${titleCase(mode)} (#${otherRank} -> #${currentRank})` };
+        }
+
+        if (otherRank < currentRank) {
+            return { cls: 'down', text: `↓ down vs ${titleCase(mode)} (#${otherRank} -> #${currentRank})` };
+        }
+
+        return { cls: 'same', text: `No change vs ${titleCase(mode)} (#${currentRank})` };
+    }
+
+    function renderComparison(query) {
+        comparisonLayout.style.display = 'grid';
+        renderTopChanges();
+        renderComparisonSummary(query);
+    }
+
+    function renderTopChanges() {
+        const rankMaps = Object.fromEntries(modes.map((mode) => [mode, getRankMap(mode)]));
+        const allMovies = Array.from(new Set(modes.flatMap((mode) => (comparisonData[mode] || []).map((movie) => movie.movie))));
+
+        const changes = allMovies
+            .map((movieName) => {
+                const ranks = modes
+                    .map((mode) => ({ mode, rank: rankMaps[mode][movieName] }))
+                    .filter((item) => item.rank);
+                if (ranks.length < 2) {
+                    return null;
+                }
+
+                const sorted = [...ranks].sort((a, b) => a.rank - b.rank);
+                return {
+                    movie: movieName,
+                    spread: sorted[sorted.length - 1].rank - sorted[0].rank,
+                    ranks
+                };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.spread - a.spread)
+            .slice(0, 5);
+
+        topChangesContainer.innerHTML = changes.map((item) => {
+            const path = item.ranks
+                .sort((a, b) => a.rank - b.rank)
+                .map((entry) => `${titleCase(entry.mode)} #${entry.rank}`)
+                .join(' -> ');
+            return `
+                <div class="top-change-item">
+                    <strong>${item.movie}</strong>
+                    <div class="change-path">${path}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderComparisonSummary(query) {
+        comparisonSummaryContainer.innerHTML = modes.map((mode) => {
+            const topMovies = (comparisonData[mode] || []).slice(0, 3);
+            return `
+                <div class="mode-summary" data-mode="${mode}">
+                    <h4 style="color: ${modeColors[mode]};">${titleCase(mode)}</h4>
+                    <ol>
+                        ${topMovies.map((movie) => `<li>${movie.movie} <span style="color: var(--text-secondary);">#${movie.rank}</span></li>`).join('')}
+                    </ol>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderResults(movies, currentMode) {
+        const otherModes = modes.filter((mode) => mode !== currentMode);
+        const otherRankMaps = Object.fromEntries(otherModes.map((mode) => [mode, getRankMap(mode)]));
+
+        resultsContainer.innerHTML = movies.map((movie, index) => {
+            const isTop3 = index < 3;
+            const rank = movie.rank ?? (index + 1);
+            const movements = otherModes.map((mode) => describeMovement(rank, otherRankMaps[mode][movie.movie], mode));
+            const changed = movements.some((movement) => movement.cls !== 'same');
+
+            return `
+                <div class="movie-card ${isTop3 ? 'top-3' : ''} ${changed ? 'rank-change-card' : ''}" data-mode="${currentMode}">
+                    ${isTop3 ? '<div class="top-badge">Top Ranked</div>' : ''}
+                    <div class="movie-title">${movie.movie}</div>
+                    <div style="display: flex; flex-wrap: wrap; align-items: center;">
+                        <div class="summary-tag">${movie.summaryTag}</div>
+                        <div class="mode-tag">${titleCase(currentMode)}</div>
+                        ${changed ? '<div class="rank-change-badge">Rank Changed</div>' : ''}
+                    </div>
+                    <div class="movie-stats">
+                        <span class="stat-badge">Rating ${movie.avgRating.toFixed(1)}</span>
+                        <span class="stat-badge">Popularity ${movie.popularity}</span>
+                    </div>
+                    <div class="movement-row">
+                        ${movements.map((movement) => `<div class="movement-chip ${movement.cls}">${movement.text}</div>`).join('')}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
+                        <span style="font-size: 0.9rem; font-weight: bold; color: ${isTop3 ? 'var(--gold)' : 'var(--text-secondary)'};">Rank #${rank}</span>
+                        <div style="text-align: right;">
+                            <div class="score-badge">Match ${movie.score.toFixed(1)}</div>
+                            <div class="score-meta">Model signal ${movie.modelScore.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div class="why-section">
+                        <strong style="color: white; display: block; margin-bottom: 0.25rem;">Why this ranking?</strong>
+                        ${movie.explanation}<br/><br/>
+                        <span style="font-size: 0.75rem; opacity: 0.7;">Better than ${movie.betterThanCount} other movies in this category.</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function trainModel() {
+        trainBtn.innerText = 'Training...';
+        trainBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/train', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rankingType: selectedMode })
+            });
+            const data = await response.json();
+            alert(
+                `${data.message || 'Model trained successfully.'}\n\n` +
+                `${data.metricName}: ${data.metricValue}\n` +
+                `Model NDCG@3: ${data.modelNdcgAt3}\n` +
+                `Baseline NDCG@3: ${data.baselineNdcgAt3}\n` +
+                `Model MAP: ${data.modelMap}\n` +
+                `Baseline MAP: ${data.baselineMap}`
+            );
+            modelStatus.innerText = `${titleCase(selectedMode)} Ready`;
+            modelStatus.style.color = 'var(--accent)';
+        } catch (error) {
+            alert('Training failed: ' + error.message);
+        } finally {
+            trainBtn.innerText = 'Train ML Model';
+            trainBtn.disabled = false;
+        }
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+    trainBtn.addEventListener('click', trainModel);
+    modeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            selectedMode = button.dataset.mode;
+            syncModeUi();
+            resultsContainer.innerHTML = '';
+            queryHeader.innerText = `${titleCase(selectedMode)} mode selected`;
+            queryHeader.style.display = 'block';
+            if (Object.keys(comparisonData).length > 0) {
+                renderComparison(searchInput.value.trim());
+                renderResults(comparisonData[selectedMode] || [], selectedMode);
+            }
+
+            if (searchInput.value.trim()) {
+                performSearch();
+            }
+        });
+    });
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    // Auth & Logout Logic
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+        document.getElementById('userProfile').style.display = 'block';
+        document.getElementById('welcomeMsg').innerText = `Hello, ${user.username}`;
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await fetch('/api/account/logout', { method: 'POST' });
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    });
+
+    // Initial check for 401 on start
+    performSearch();
+
+    syncModeUi();
+</script>
